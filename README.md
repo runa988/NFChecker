@@ -26,7 +26,7 @@ Enter RHS of FD: B
 Enter LHS of FD: B  
 Enter RHS of FD: C,D  
 
-# Output:
+# Output
 Candidate Keys: [('A')]  
 Prime Attributes: {'A'}  
 Non-Key Attributes: {'B', 'C', 'D'}  
