@@ -1,0 +1,86 @@
+from itertools import combinations
+
+def closure(attributes, fds):
+    """ Computes the closure of a given set of attributes based on the FDs. """
+    closure_set = set(attributes)
+    changed = True
+    
+    while changed:
+        changed = False
+        for lhs, rhs in fds:
+            if set(lhs).issubset(closure_set) and not set(rhs).issubset(closure_set):
+                closure_set.update(rhs)
+                changed = True
+                
+    return closure_set
+
+def find_candidate_keys(attributes, fds):
+    """ Finds all candidate keys for the relation. """
+    all_attrs = set(attributes)
+    candidate_keys = []
+    
+    for r in range(1, len(attributes) + 1):
+        for subset in combinations(attributes, r):
+            if closure(subset, fds) == all_attrs:
+                # Minimality check
+                if not any(set(ck).issubset(set(subset)) for ck in candidate_keys):
+                    candidate_keys.append(subset)
+    
+    return candidate_keys
+
+def check_normal_forms(attributes, fds, candidate_keys):
+    """ Determines the highest normal form satisfied. """
+    prime_attributes = set(attr for key in candidate_keys for attr in key)
+    non_prime_attributes = set(attributes) - prime_attributes
+
+    # Check for 1NF (always assumed satisfied in relational model)
+    highest_nf = "1NF"
+
+    # Check for 2NF (no partial dependencies)
+    for lhs, rhs in fds:
+        for ck in candidate_keys:
+            if set(lhs).issubset(set(ck)) and set(lhs) != set(ck) and set(rhs).intersection(non_prime_attributes):
+                highest_nf = "1NF"
+                return highest_nf  # If partial dependency found, relation is in 1NF only
+
+    highest_nf = "2NF"
+
+    # Check for 3NF (no transitive dependencies)
+    for lhs, rhs in fds:
+        if set(rhs).issubset(non_prime_attributes) and not set(lhs).issubset(prime_attributes):
+            highest_nf = "2NF"
+            return highest_nf  # If transitive dependency found, relation is in 2NF only
+
+    highest_nf = "3NF"
+
+    # Check for BCNF (every determinant must be a superkey)
+    for lhs, rhs in fds:
+        if closure(lhs, fds) != set(attributes):  # If LHS is not a superkey
+            highest_nf = "3NF"
+            return highest_nf  # If LHS is not a superkey, relation is only in 3NF
+
+    highest_nf = "BCNF"
+
+    return highest_nf
+
+# Main program
+attributes = input("Enter attributes (comma-separated): ").split(",")
+num_fds = int(input("Enter the number of functional dependencies: "))
+
+fds = []
+for _ in range(num_fds):
+    lhs = input("Enter LHS of FD (comma-separated): ").split(",")
+    rhs = input("Enter RHS of FD (comma-separated): ").split(",")
+    fds.append((lhs, rhs))
+
+candidate_keys = find_candidate_keys(attributes, fds)
+prime_attributes = set(attr for key in candidate_keys for attr in key)
+non_key_attributes = set(attributes) - prime_attributes
+highest_nf = check_normal_forms(attributes, fds, candidate_keys)
+
+# Display results
+print("\nResults:")
+print("Candidate Keys:", candidate_keys)
+print("Prime Attributes:", prime_attributes)
+print("Non-Key Attributes:", non_key_attributes)
+print("Highest Normal Form Satisfied:", highest_nf)
